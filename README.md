@@ -9,7 +9,7 @@ Syslog became a industry standard for quick and painless logging. While people c
 Rationale
 ---------
 
-The main goal of jyslog is simplicity. That's why user can start logging by creating just single [`Syslogger`](https://github.com/hirthwork/jyslog/blob/master/src/main/java/com/reinventedcode/jyslog/Syslogger.java) object which will guide you to the wonderful world of syslogging:
+The main goal of jyslog is simplicity. That's why user can start logging by creating just single [`Syslogger`](src/main/java/com/reinventedcode/jyslog/Syslogger.java) object which will guide you to the wonderful world of syslogging:
 
 ```java
 Syslogger syslogger = new BasicSyslogger(new UdpSyslog());
@@ -87,12 +87,12 @@ Understanding jyslog
 jyslog consist of two layers:
 
 * Transport layer, which converts log message to raw bytes and sends it to syslog server.
-* Application layer, which is responsible for log message generation. Among with message text and exception information saving, this includes message source and timestamp collecting into single [`Record`](https://github.com/hirthwork/jyslog/blob/master/src/main/java/com/reinventedcode/jyslog/Record.java) object.
+* Application layer, which is responsible for log message generation. Among with message text and exception information saving, this includes message source and timestamp collecting into single [`Record`](src/main/java/com/reinventedcode/jyslog/Record.java) object.
 
 Transport layer in turn consist of two components:
 
-* [`Formatter`](https://github.com/hirthwork/jyslog/blob/master/src/main/java/com/reinventedcode/jyslog/Formatter.java), which will convert `Record` to `ByteBuffer`
-* [`Syslog`](https://github.com/hirthwork/jyslog/blob/master/src/main/java/com/reinventedcode/jyslog/Syslog.java), which will send `ByteBuffer` to syslog server
+* [`Formatter`](src/main/java/com/reinventedcode/jyslog/Formatter.java), which will convert `Record` to `ByteBuffer`
+* [`Syslog`](src/main/java/com/reinventedcode/jyslog/Syslog.java), which will send `ByteBuffer` to syslog server
 
 RFC3164 `Syslog` object can be created simply by:
 ```java
@@ -106,8 +106,8 @@ try (Syslog syslog = new UdpSyslog(Rfc3164FormatterSupplier.INSTANCE)) {
 
 Application layer consist of two components:
 
-* [`SourceInfo`](https://github.com/hirthwork/jyslog/blob/master/src/main/java/com/reinventedcode/jyslog/SourceInfo.java) which contains rarely mutable information, such as syslog message header contents (except [`priority`](http://tools.ietf.org/html/rfc5424#section-6.2.1) and [`timestamp`](http://tools.ietf.org/html/rfc5424#section-6.2.3))
-* [`Record`](https://github.com/hirthwork/jyslog/blob/master/src/main/java/com/reinventedcode/jyslog/Record.java) which contains all information from `SourceInfo` plus message text and exception information.
+* [`SourceInfo`](src/main/java/com/reinventedcode/jyslog/SourceInfo.java) which contains rarely mutable information, such as syslog message header contents (except [`priority`](http://tools.ietf.org/html/rfc5424#section-6.2.1) and [`timestamp`](http://tools.ietf.org/html/rfc5424#section-6.2.3))
+* [`Record`](src/main/java/com/reinventedcode/jyslog/Record.java) which contains all information from `SourceInfo` plus message text and exception information.
 
 Application which use jyslog should never create `Record` objects as this is a `Syslogger` job, which in fact a handy shortcut for `Record` constructor.
 
