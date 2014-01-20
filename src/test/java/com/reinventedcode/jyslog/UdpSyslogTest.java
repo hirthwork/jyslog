@@ -20,8 +20,7 @@ public class UdpSyslogTest {
             InetSocketAddress addr =
                 (InetSocketAddress) channel.getLocalAddress();
             try (Syslog syslog = new UdpSyslog(addr.getPort())) {
-                Syslogger logger =
-                    new BasicSyslogger(BasicSourceInfo.DEFAULT, syslog);
+                Syslogger logger = new BasicSyslogger(syslog);
                 ByteBuffer buf = ByteBuffer.allocate(BUFFER_SIZE);
                 String messageText = "Testing rfc5424";
                 for (int i = 0; i < REPEATS; ++i) {
@@ -50,16 +49,15 @@ public class UdpSyslogTest {
             InetSocketAddress addr =
                 (InetSocketAddress) channel.getLocalAddress();
             try (Syslog syslog = new UdpSyslog(addr.getPort())) {
-                Syslogger logger =
-                    new BasicSyslogger(BasicSourceInfo.DEFAULT, syslog)
-                        .withFacility(Facility.LOCAL7)
-                        .withProcid("bad proc id")
-                        .withMsgid("0123456789abcdef0123456789abcdef cut")
-                        .withStructuredData(
-                            new BasicSDElement("elemid")
-                                .param("name", "value")
-                                .param("bad]name", "bad value]"),
-                            new BasicSDElement("bad=id"));
+                Syslogger logger = new BasicSyslogger(syslog)
+                    .withFacility(Facility.LOCAL7)
+                    .withProcid("bad proc id")
+                    .withMsgid("0123456789abcdef0123456789abcdef cut")
+                    .withStructuredData(
+                        new BasicSDElement("elemid")
+                            .param("name", "value")
+                            .param("bad]name", "bad value]"),
+                        new BasicSDElement("bad=id"));
                 String messageText = "Testing structured data";
                 logger.debug(messageText);
                 ByteBuffer buf = ByteBuffer.allocate(BUFFER_SIZE);
@@ -88,10 +86,9 @@ public class UdpSyslogTest {
             try (Syslog syslog = new UdpSyslog(addr.getPort(),
                     Rfc3164FormatterSupplier.INSTANCE))
             {
-                Syslogger logger =
-                    new BasicSyslogger(BasicSourceInfo.DEFAULT, syslog)
-                        .withHostname("example.com")
-                        .withAppname("tester");
+                Syslogger logger = new BasicSyslogger(syslog)
+                    .withHostname("example.com")
+                    .withAppname("tester");
                 String messageText = "Testing rfc3164";
                 ByteBuffer buf = ByteBuffer.allocate(BUFFER_SIZE);
                 boolean uncut = false;
@@ -121,6 +118,45 @@ public class UdpSyslogTest {
                 }
                 Assert.assertTrue(uncut);
                 Assert.assertTrue(truncated);
+            }
+        }
+    }
+
+    @Test
+    public void testClosedDestination() throws Exception {
+        int port;
+        try (DatagramChannel channel = DatagramChannel.open().bind(null)) {
+            port = ((InetSocketAddress) channel.getLocalAddress()).getPort();
+        }
+        BasicIOExceptionHandler handler = new BasicIOExceptionHandler();
+        try (Syslog syslog = new UdpSyslog(port, handler)) {
+            Syslogger logger = new BasicSyslogger(syslog).withMsgid("failure");
+            for (int i = 0; i < REPEATS; ++i) {
+                logger.debug("What about unreachable destination?\n"
+                    + "Will you report exception or just keep calm and carry "
+                    + "on? You're intended to be lightweight and fast, so I "
+                    + "believe you wont throw any pesky exceptions, boy. "
+                    + "But you will let me now that something is wrong");
+            }
+            Assert.assertNotNull(handler.exception());
+            Assert.assertNull(handler.exception());
+            try (DatagramChannel channel =
+                    DatagramChannel.open().bind(new InetSocketAddress(port)))
+            {
+                String messageText = "Now you should be able to do logging";
+                logger.emergency(messageText);
+                ByteBuffer buf = ByteBuffer.allocate(BUFFER_SIZE);
+                Assert.assertNotNull(channel.receive(buf));
+                String message = new String(buf.array(), 0, buf.position(),
+                    StandardCharsets.UTF_8);
+                int firstSpace = message.indexOf(' ');
+                int secondSpace = message.indexOf(' ', firstSpace + 1);
+                message = message.substring(0, firstSpace)
+                    + message.substring(secondSpace);
+                Assert.assertEquals(
+                    "<8>1 " + BasicSourceInfo.DEFAULT.hostname()
+                    + " java - failure - \ufeff" + messageText,
+                    message);
             }
         }
     }

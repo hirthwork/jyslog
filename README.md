@@ -115,6 +115,7 @@ Examples
 --------
 
 ### Binding to remote syslog server
+
 ```java
 Syslog syslog = new UdpSyslog(new InetSocketAddress("example.com", 514));
 Syslogger syslogger = new BasicSyslogger(syslog);
@@ -122,6 +123,7 @@ syslogger.info("Hello there!");
 ```
 
 ### Setting structured data
+
 ```java
 Syslogger syslogger = new BasicSyslogger(new UdpSyslog()).withStructuredData(
     new BasicSDElement("timeQuality")
@@ -132,3 +134,18 @@ Syslogger syslogger = new BasicSyslogger(new UdpSyslog()).withStructuredData(
 syslogger.info("Here the message with some structured data");
 ```
 
+### Message transmission error handling
+[`UdpSyslog`](src/main/java/com/reinventedcode/jyslog/UdpSyslog.java) constructor accepts [`IOExceptionHandler`](src/main/java/com/reinventedcode/jyslog/IOExceptionHandler.java) object. In case of any `IOException` during log message transmission, `IOExceptionHandler.handleException(IOException)` will be called. So, basic exception checking can be done like this:
+
+```java
+BasicIOExceptionHandler handler = new BasicIOExceptionHandler();
+Syslogger syslogger = new BasicSyslogger(new UdpSyslog(handler));
+for (int i = 0; i < 10000; ++i) {
+    syslogger.info("Hello, world!");
+}
+if (handler.exception() != null) {
+    System.err.println("Some log messages lost!");
+}
+```
+
+**NOTE**: Be aware, that there is no guarantee of such exception when sending single message.

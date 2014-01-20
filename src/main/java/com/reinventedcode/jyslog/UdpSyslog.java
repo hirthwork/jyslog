@@ -45,6 +45,12 @@ public class UdpSyslog extends AbstractSyslog {
         this(localAddress(port), formatterSupplier);
     }
 
+    public UdpSyslog(final IOExceptionHandler ioExceptionHandler)
+        throws IOException
+    {
+        this(DEFAULT_PORT, ioExceptionHandler);
+    }
+
     public UdpSyslog(final int port,
         final IOExceptionHandler ioExceptionHandler)
         throws IOException
