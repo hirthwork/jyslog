@@ -148,4 +148,4 @@ if (handler.exception() != null) {
 }
 ```
 
-**NOTE**: Be aware, that there is no guarantee of such exception when sending single message.
+**NOTE**: Be aware, that there is no guarantee of such exception when sending single message. By default, all exceptions ignored.
