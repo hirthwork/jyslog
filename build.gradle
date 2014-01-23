@@ -30,7 +30,7 @@ checkstyle {
 
 pmd {
     ruleSets = ["basic", "braces", "clone", "codesize", "coupling", "design",
-        "finalizers", "imports", "junit", "naming", "optimizations", "strings",
+        "finalizers", "imports", "junit", "optimizations", "strings",
         "sunsecure", "typeresolution", "unusedcode"]
 }
 
