@@ -20,7 +20,7 @@ syslogger.info("It is rfc 5424 one!");
 Features
 --------
 
-jyslog supports [RFC3164](http://tools.ietf.org/html/rfc3164) (BSD syslog), [RFC5424](http://tools.ietf.org/html/rfc5424) (syslog itself) and [RFC5426](http://tools.ietf.org/html/rfc5426) (syslog over UDP). TCP and TLS transports are not supported.
+jyslog supports [RFC3164](http://tools.ietf.org/html/rfc3164) (BSD syslog), [RFC5424](http://tools.ietf.org/html/rfc5424) (syslog itself), [RFC5426](http://tools.ietf.org/html/rfc5426) (syslog over UDP) and [RFC6587](http://tools.ietf.org/html/rfc6587) (syslog over TCP). TLS transport not supported.
 
 Prerequisites
 -------------
@@ -32,6 +32,15 @@ Build
 -----
 ```shell
 gradle -Dorg.gradle.java.home=/path/to/jdk8 build
+```
+
+`UdpSyslogLoadTest` may fail, this is caused by unreliable nature of UDP. You should tune your network parameters with `sysctl` to have it executed successfully:
+
+```
+net.core.rmem_default = 67108864
+net.core.rmem_max = 67108864
+net.core.wmem_default = 67108864
+net.core.wmem_max = 67108864
 ```
 
 Quick start
@@ -148,4 +157,16 @@ if (handler.exception() != null) {
 }
 ```
 
-**NOTE**: Be aware, that there is no guarantee of such exception when sending single message. By default, all exceptions ignored.
+**NOTE**: Be aware, that there is no guarantee of such exception when sending single message. By default, syslog objects use `IgnoringIOExceptionHandler`.
+
+### Syslog over TCP
+When syslogging over TCP separate thread used for network transmission, so `TcpSyslog.start()` function must be called prior to logging:
+
+```java
+try (TcpSyslog syslog = new TcpSyslog()) {
+    syslog.start();
+    Syslogger logger = new BasicSyslogger(syslog);
+    logger.info("Here we have syslog over TCP");
+}
+```
+

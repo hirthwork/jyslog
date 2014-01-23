@@ -6,7 +6,9 @@ public class BasicIOExceptionHandler implements IOExceptionHandler {
     private IOException exception = null;
 
     @Override
-    public synchronized void handleException(final IOException exception) {
+    public synchronized void handleException(final IOException exception,
+        final Record record)
+    {
         if (this.exception == null) {
             this.exception = exception;
         } else {

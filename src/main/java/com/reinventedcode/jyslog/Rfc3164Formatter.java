@@ -1,7 +1,5 @@
 package com.reinventedcode.jyslog;
 
-import java.io.IOException;
-
 import java.nio.ByteBuffer;
 
 import java.time.ZoneId;
@@ -29,6 +27,14 @@ public class Rfc3164Formatter extends AbstractFormatter {
             .toFormatter(Locale.ENGLISH)
             .withZone(ZoneId.systemDefault());
 
+    public Rfc3164Formatter() {
+        this(false);
+    }
+
+    public Rfc3164Formatter(final boolean countOctets) {
+        super(countOctets);
+    }
+
     @Override
     protected void appendHeader(final Record record) {
         DATE_TIME_FORMATTER.formatTo(record.timestamp(), sb);
@@ -45,11 +51,10 @@ public class Rfc3164Formatter extends AbstractFormatter {
     }
 
     @Override
-    public ByteBuffer format(final Record record) throws IOException {
+    public ByteBuffer format(final Record record) {
         ByteBuffer buf = super.format(record);
-        int position = buf.position();
-        if (buf.limit() - position > MAX_SIZE) {
-            buf.limit(position + MAX_SIZE);
+        if (buf.remaining() > MAX_SIZE) {
+            buf.limit(buf.position() + MAX_SIZE);
         }
         return buf;
     }

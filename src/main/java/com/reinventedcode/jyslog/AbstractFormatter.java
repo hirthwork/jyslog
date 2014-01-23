@@ -1,6 +1,5 @@
 package com.reinventedcode.jyslog;
 
-import java.io.IOException;
 import java.io.PrintWriter;
 
 import java.nio.ByteBuffer;
@@ -13,9 +12,9 @@ public abstract class AbstractFormatter implements Formatter {
     private static final int INITIAL_SIZE = 1024;
     private static final float MAX_BYTES_PER_CHAR =
         StandardCharsets.UTF_8.newEncoder().maxBytesPerChar();
-    private static final int INITIAL_BSIZE = bytesRequired(INITIAL_SIZE);
-    private static final int MILLIS_DIGITS = 3;
     private static final int FACILITY_SHIFT = 3;
+    private static final int OCTETS_COUNT_LENGTH = 11;
+    private static final int DECIMAL_DIVISOR = 10;
 
     protected final StringBuilder sb = new StringBuilder(INITIAL_SIZE);
     private final CharsetEncoder encoder = StandardCharsets.UTF_8.newEncoder()
@@ -23,9 +22,14 @@ public abstract class AbstractFormatter implements Formatter {
         .onUnmappableCharacter(CodingErrorAction.REPLACE);
     private final AppendingCharArrayWriter appendingWriter =
         new AppendingCharArrayWriter(INITIAL_SIZE);
-    private ByteBuffer bb = ByteBuffer.allocateDirect(INITIAL_BSIZE);
-    private byte[] buf = new byte[INITIAL_BSIZE];
+    private final boolean countOctets;
+    private ByteBuffer bb = ByteBuffer.allocateDirect(INITIAL_SIZE);
+    private byte[] buf = new byte[INITIAL_SIZE];
     private char[] cbuf = new char[INITIAL_SIZE];
+
+    public AbstractFormatter(final boolean countOctets) {
+        this.countOctets = countOctets;
+    }
 
     protected void appendPriority(final Record record) {
         sb.setLength(0);
@@ -59,12 +63,21 @@ public abstract class AbstractFormatter implements Formatter {
         }
     }
 
-    @Override
-    public ByteBuffer format(final Record record) throws IOException {
-        appendPriority(record);
-        appendHeader(record);
-        appendMessage(record);
+    protected ByteBuffer toByteBuffer(final byte[] buf, final int off,
+        final int len)
+    {
+        int capacity = bb.capacity();
+        if (capacity < len) {
+            bb = ByteBuffer.allocateDirect(Math.max(capacity << 1, len));
+        } else {
+            bb.clear();
+        }
+        bb.put(buf, off, len);
+        bb.flip();
+        return bb;
+    }
 
+    protected ByteBuffer encode() {
         // it's time to convert chars to bytes
         int len = sb.length();
         if (cbuf.length < len) {
@@ -72,22 +85,40 @@ public abstract class AbstractFormatter implements Formatter {
         }
         sb.getChars(0, len, cbuf, 0);
         int blen = bytesRequired(len);
+        int off;
+        if (countOctets) {
+            off = OCTETS_COUNT_LENGTH;
+            blen += OCTETS_COUNT_LENGTH;
+        } else {
+            off = 0;
+        }
         if (buf.length < blen) {
             buf = new byte[Math.max(buf.length << 1, blen)];
         }
         CharBuffer cb = CharBuffer.wrap(cbuf, 0, len);
-        ByteBuffer bb = ByteBuffer.wrap(buf);
+        ByteBuffer bb = ByteBuffer.wrap(buf, off, blen - off);
         encoder.encode(cb, bb, true);
-        blen = bb.position();
-        int capacity = this.bb.capacity();
-        if (capacity < blen) {
-            this.bb = ByteBuffer.allocateDirect(Math.max(capacity << 1, blen));
-        } else {
-            this.bb.clear();
+        blen = bb.position() - off;
+        if (countOctets) {
+            int value = blen;
+            buf[--off] = ' ';
+            ++blen;
+            while (value != 0) {
+                int rem = value % DECIMAL_DIVISOR;
+                buf[--off] = (byte) ('0' + rem);
+                value /= DECIMAL_DIVISOR;
+                ++blen;
+            }
         }
-        this.bb.put(buf, 0, blen);
-        this.bb.flip();
-        return this.bb;
+        return toByteBuffer(buf, off, blen);
+    }
+
+    @Override
+    public ByteBuffer format(final Record record) {
+        appendPriority(record);
+        appendHeader(record);
+        appendMessage(record);
+        return encode();
     }
 
     private static int bytesRequired(final int chars) {

@@ -10,6 +10,14 @@ public class Rfc5424Formatter extends AbstractFormatter {
         DateTimeFormatter.ISO_OFFSET_DATE_TIME
             .withZone(ZoneId.systemDefault());
 
+    public Rfc5424Formatter() {
+        this(false);
+    }
+
+    public Rfc5424Formatter(final boolean countOctets) {
+        super(countOctets);
+    }
+
     @Override
     protected void appendHeader(final Record record) {
         sb.append('1');

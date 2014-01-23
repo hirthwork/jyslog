@@ -7,7 +7,7 @@ public class IgnoringIOExceptionHandler implements IOExceptionHandler {
         new IgnoringIOExceptionHandler();
 
     @Override
-    public void handleException(final IOException e) {
+    public void handleException(final IOException e, final Record record) {
     }
 }
 
