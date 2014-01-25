@@ -11,8 +11,8 @@ public class AppendingCharArrayWriter extends CharArrayWriter {
         super(capacity);
     }
 
-    public void appendTo(final StringBuilder builder) {
-        builder.append(buf, 0, count);
+    public void appendTo(final StringBuilder sb) {
+        sb.append(buf, 0, count);
     }
 }
 

@@ -19,11 +19,9 @@ public final class StringUtils {
                 value = value.substring(0, maxLength);
             }
             if (!value.chars().allMatch(predicate)) {
-                final StringBuilder builder =
-                    new StringBuilder(value.length());
-                value.chars()
-                    .forEachOrdered(new CharReplacer(builder, predicate));
-                value = builder.toString();
+                final StringBuilder sb = new StringBuilder(value.length());
+                value.chars().forEachOrdered(new CharReplacer(sb, predicate));
+                value = sb.toString();
             }
         }
         return value;
